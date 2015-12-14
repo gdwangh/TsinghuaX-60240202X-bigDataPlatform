@@ -1,0 +1,1 @@
+Program('upload', ['main.cpp', 'upload.cpp', 'test.cpp', 'worker.cpp', 'uuid.cpp'])
