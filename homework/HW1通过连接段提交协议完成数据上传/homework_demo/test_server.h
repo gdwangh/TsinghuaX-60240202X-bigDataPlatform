@@ -27,9 +27,9 @@ public:
 
     void InitTableForTest(const std::string& tableName, const std::string& content)
     {
-	mWorkers[3] = new TestWorker(3);
         UpdateTable(tableName, content);
-        
+        mWorkers[3] = new TestWorker(3);
+
     }
 };
 

@@ -24,6 +24,7 @@ public:
 protected:
     std::map<size_t, WorkerPtr> mWorkers;
     std::map<std::string, std::vector<size_t> > mTables;
+    	
 };
 }
 

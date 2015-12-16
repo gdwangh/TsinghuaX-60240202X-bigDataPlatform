@@ -27,17 +27,15 @@ bool Test::TestUploadInternal(TestServer* testServer)
     /*在init过程会调用正常的UpdateTable逻辑*/
     testServer->InitTableForTest(tableName, content);
 
-    cout<<"have "<<testServer->mWorkers.size()<<" workers"<<endl;
     /*获取table所有拷贝所在的Worker id*/
     cout<<"case 1"<<endl;
     std::vector<size_t> workers = testServer->mTables["demo"];
 
     if (workers.size() == 0)
     {
-	cout<<"case 1 fail."<<endl;
+				cout<<"case 1 fail."<<endl;
         return false;
     }
-    cout<<"have "<<workers.size()<<" workers"<<endl;
 
     /*检查每一个拷贝是否都写成功*/
     cout<<"case 2"<<endl;
@@ -47,7 +45,7 @@ bool Test::TestUploadInternal(TestServer* testServer)
         testServer->mWorkers[workers[i]]->ReadTable(tableName, result);
         if (result != content)
         {
-	    cout<<"case 2 fail."<<endl;
+	    			cout<<"case 2 fail."<<endl;
             return false;
         }
     }
@@ -58,7 +56,7 @@ bool Test::TestUploadInternal(TestServer* testServer)
     cout<<"case 3"<<endl;
     if (testServer->UpdateTable(tableName, content) != false)
     {
-	cout<<"case 3 fail!"<<endl;
+				cout<<"case 3 fail!"<<endl;
         return false;
     }
 
@@ -71,7 +69,7 @@ bool Test::TestUploadInternal(TestServer* testServer)
         testServer->mWorkers[newWorkers[i]]->ReadTable(tableName, result);
         if (result != content)
         {
-	    cout<<"case 4 fail!"<<endl;
+	    			cout<<"case 4 fail!"<<endl;
             return false;
         }
     }
