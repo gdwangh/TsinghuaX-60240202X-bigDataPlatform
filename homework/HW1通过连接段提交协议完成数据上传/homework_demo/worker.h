@@ -17,6 +17,11 @@ public:
     bool UpdateTable(const std::string& tableName, const std::string& content);
 
     bool ReadTable(const std::string& tableName, std::string& content);
+    	
+    // 正式提交
+    bool Commit(const std::string& tableName);
+
+    bool Rollback(const std::string& tableName);
 
 protected:
     static std::string GetFileId();
@@ -34,6 +39,12 @@ protected:
     size_t mWorkerId;
     std::map<std::string, std::vector<std::string> > mTableFiles;
     std::map<std::string, std::string> mFiles;
+    	
+    // 正式提交
+    static const int BlockSize = 1024;
+    
+    std::map<std::string, std::vector<std::string> > mTableFilesTmpToCommit;
+    	
 };
 typedef Worker* WorkerPtr;
 
