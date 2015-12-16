@@ -3,37 +3,34 @@
 using namespace std;
 using namespace homework;
 
+#include <stdlib.h>
+#include <algorithm>
+
 bool Server::UpdateTable(const string& tableName, const string& content)
 {
- 		/*获取table所有拷贝所在的Worker id*/
-    std::vector<size_t> workers = mTables[tableName];
-    
-    if (workers.size() == 0)   // 全新的table，分配Work_id
-    {
-       if (allocWorkers() == null) {
-       	   return false;
-       }
-       
-       workers = mTables[tableName];
-    }
-    
+ 		/* 简化问题，所有worker都参与 */
+    std::map<uint8_t, WorkerPtr>::iterator  it_workers;
+    std::vector<uint8_t> worker_list;
+    	    
     // 阶段1，参与者是否可以执行提交操作
     bool result = true;
-    size_t i;
     
-    for (i = 0; i < workers.size(); ++i） {
-    	 result = mWorkers[workers[i]]->UpdateTable(tableName, content);
+    for (it_workers = mWorkers.begin(); it_workers != mWorkers.end(); ++it_workers) {
+    	 result = it_workers->second->UpdateTable(tableName, content);
+
     	 if (result == false) {
+    	 		cout<<"worker "<<it_workers->first<<" UpdateTable fail"<<endl;
+    	 		
     	 		break;
     	 }
     }
-    
+        
     // 阶段二，回滚 或 真正提交
     if (result == false)    // 有失败的，回滚
     {
-    	 for (size_t j = 0; j < i; ++i） 
+    	 for (it_workers = mWorkers.begin(); it_workers != mWorkers.end(); ++it_workers)
     	 {
-		    	 result = mWorkers[workers[j]]->Rollback(tableName);
+		    	 result = it_workers->second->Rollback(tableName);
 		    	 if (result == false) {  
 		    	 	  // 回滚失败
 		    	 }
@@ -43,52 +40,28 @@ bool Server::UpdateTable(const string& tableName, const string& content)
     }  
     else // 所有都成功
     {
-    	for (size_t i = 0; i < workers.size(); ++i） 
+    	for (it_workers = mWorkers.begin(); it_workers != mWorkers.end(); ++it_workers)
     	{
-    	 		result = mWorkers[workers[i]]->Commit(tableName);
+    	 		result = it_workers->second->Commit(tableName);
+    	 		
     	 		if (result == false) {  
     	 			// 提交失败, 隔离worker
+    	 		}  else {
+    	 			worker_list.push_back(it_workers->first);
     	 		}
     	 }
     	 
     	 result = true;
     }
     
+    mTables[tableName] = worker_list;
+        
     return result;
 }
 
-bool Server::allocWorkers(const string& tableName)  {
-	maxCopyNum = max(mWorkers.size(), 3);
-	
-	// 生成[0,maxCopyNum)之间的随机整数
-	 srand((unsigned)time(NULL)); 
-	 size_t idx = rand() % maxCopyNum;
-	 
-	 // 跳到起始位置
-	 std::map<uint8_t, WorkerPtr> ::iterator it = mWorkers.begin() + idx;
-	 
-	 std::vector<std::string> work_list;
-	 	
-	 // 取maxCopyNum个worker
-	 for (size_t i=0; i<maxCopyNum; i++)
-	 {
-	 	  work_list[i] = it->first;
-	 	  it++;
-	 	  if (it == mWorkers.end()) 
-	 	  {
-	 	      it = mWorkers.begin();
-	 	  }
-	 	  	
-	 }
-	 
-	 mTables[tableName] = work_list;
-	 return true;
-}
-
-
 
 bool Worker::UpdateTable(const string& tableName, const string& content)
-{	  	
+{	 
 	  std::map<std::string, std::vector<std::string> >::iterator it;
 	  std::vector<std::string> tmpFileList;
 	  	
@@ -99,7 +72,7 @@ bool Worker::UpdateTable(const string& tableName, const string& content)
 	  
 	  // 计算要分多少块
 	  int fileNum = content.length()/BlockSize;
-	  if (content.length % BlockSize > 0) fileNum++;
+	  if (content.length() % BlockSize > 0) fileNum++;
 	  	
 	  // 分块写入多个文件
 	  for (size_t i=0; i< fileNum; i++) {
@@ -113,12 +86,15 @@ bool Worker::UpdateTable(const string& tableName, const string& content)
 	  	  if (WriteToFile(newFileId,content.substr(i*BlockSize, BlockSize)) == false) {
 	  	  	
 	  	  	// 删除已经生成的临时文件
-	  	  	std::for_each( tmpFileList.begin(), tmpFileList.end(), DeleteFile);
+			for (size_t j=0; j<tmpFileList.size();j++) 
+			{
+				   DeleteFile(tmpFileList[j]);
+			}
 	  	  		
 	  	  	return false;
 	  	  }
 	  	  	
-	  	  tmpFileList[i] = newFileId;
+	  	  tmpFileList.push_back(newFileId);
 	  }
 
     // 保存到待提交修改中
@@ -136,7 +112,7 @@ bool Worker::Commit(const std::string& tableName){
 		it_new = mTableFilesTmpToCommit.find(tableName);
 		it_old = mTableFiles.find(tableName);
 		
-		if ( it_new == mTableFilesTmp.end() && (it_old == mTableFiles.end()) {   // 没有需要提交的内容
+		if ( (it_new == mTableFilesTmpToCommit.end()) && (it_old == mTableFiles.end())) {   // 没有需要提交的内容
 	  	return true;
 	  }
 	  
@@ -161,10 +137,9 @@ bool Worker::Commit(const std::string& tableName){
 bool Worker::Rollback(const std::string& tableName){
 	
 		std::map<std::string, std::vector<std::string> >::iterator it_new;
-		
 		it_new = mTableFilesTmpToCommit.find(tableName);
-		
-		if ( it_new == mTableFilesTmp.end()) {   // 没有需要提交的内容
+
+		if ( it_new == mTableFilesTmpToCommit.end()) {   // 没有需要提交的内容
 	  	return true;
 	  }
 	  
