@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+MAIN_CLASS="com.aliyun.odps.cli.Main"
+JAVA_HEAP_MAX=-Xmx1024m
+
+PWD=`pwd`
+
+bin=`dirname "$0"`
+bin=`cd "$bin"; pwd`
+
+# detect os
+cygwin=false
+case "`uname`" in
+    CYGWIN*) cygwin=true;
+esac
+
+# resolve inks - $0 may be a softlink
+this="$0"
+
+link=$(readlink "$0")
+if [ "$link" !=  "" ]
+then
+  this=$link
+fi
+
+# convert relative path to absolute path
+bin=`dirname "$this"`
+script=`basename "$this"`
+bin=`cd "$bin";pwd`
+this="$bin/$script"
+
+# the root of the Program installation
+PROGRAM_HOME=`dirname "$this"`/..
+
+# conf dir
+DEFAULT_CONF_DIR="$PROGRAM_HOME/conf"
+CONF_DIR=${ODPS_CLI_CONF_DIR:-$DEFAULT_CONF_DIR}
+CLASSPATH=$CLASSPATH:"$CONF_DIR"
+
+# add libs to CLASSPATH
+for f in "$PROGRAM_HOME"/lib/*.jar;do
+    CLASSPATH=$CLASSPATH:$f;
+done
+
+# logs dir
+LOGS_DIR="$PROGRAM_HOME/logs"
+
+# cygwin path translation
+if $cygwin; then
+    CLASSPATH=`cygpath -p -w "$CLASSPATH"`
+    PROGRAM_HOME=`cygpath -p -w "$PROGRAM_HOME"`
+    LOGS_DIR=`cygpath -p -w "$LOGS_DIR"`
+fi
+
+# run it
+exec java -Duser.dir="$PWD" -Djava.util.logging.config.file="$CONF_DIR/logging.properties" -Dfile.encoding=UTF-8 -Dodps.home="$PROGRAM_HOME" $JAVA_HEAP_MAX -cp "$CLASSPATH" "$MAIN_CLASS" "$@"
