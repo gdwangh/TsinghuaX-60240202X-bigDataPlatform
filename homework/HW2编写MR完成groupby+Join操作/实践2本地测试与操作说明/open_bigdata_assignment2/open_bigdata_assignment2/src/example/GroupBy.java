@@ -26,40 +26,83 @@ import com.aliyun.odps.mapred.utils.SchemaUtils;
  * Output table schema:
  *   gby_out (customer_id string, cnt bigint)
  */
+
 public class GroupBy {
+	public static class GroupByMapper extends MapperBase {
+		private Record customer_id;
+		private Record count;
+		
+		// initial map-key and map-value
+		@Override
+		public void setup(TaskContext context) throws IOException {
+			// map-key:customer_id
+			customer_id = context.createMapOutputKeyRecord();
+			
+			// map-value: cnt
+			count = context.createMapOutputValueRecord();
+			count.set(new Object[] { 1L });
+		}
+		
+		@Override
+		public void map(long key, Record record, TaskContext context) throws IOException {
+			// (customer_id, 1)
+			customer_id.set(new Object[] { record.get(1).toString() });
+			
+			context.write(customer_id, count);
+		}
+	}
+	
+	public static class GroupByCombiner extends ReducerBase {
+		private Record count;
 
-  public static class GroupByMapper extends MapperBase {
+		@Override
+		public void setup(TaskContext context) throws IOException {
+						count = context.createMapOutputValueRecord();
+		}
+		
+		@Override
+		public void reduce(Record key, Iterator<Record> values, TaskContext context) throws IOException {			
+			Long cnt = 0L;
+			
+			while (values.hasNext()) {
+				Record v = values.next();  
+				
+				cnt += (Long)v.get(0);
+			}
+			
+			count.set(0,cnt);
+			context.write(key, count);
 
-    @Override
-    public void setup(TaskContext context) throws IOException {
-    }
-
-    @Override
-    public void map(long key, Record record, TaskContext context) throws IOException {
-    }
-  }
-
-  public static class GroupByCombiner extends ReducerBase {
-
-    @Override
-    public void setup(TaskContext context) throws IOException {
-    }
-
-    @Override
-    public void reduce(Record key, Iterator<Record> values, TaskContext context) throws IOException {
-    }
-  }
-
-  public static class GroupByReducer extends ReducerBase {
-
-    @Override
-    public void setup(TaskContext context) throws IOException {
-    }
-
-    @Override
-    public void reduce(Record key, Iterator<Record> values, TaskContext context) throws IOException {
-    }
-  }
+		}
+	}
+	
+	public static class GroupByReducer extends ReducerBase {
+		private Record result=null;
+		
+		@Override
+		public void setup(TaskContext context) throws IOException {
+			result = context.createOutputRecord();
+		}
+		
+		@Override
+		public void reduce(Record key, Iterator<Record> values, TaskContext context) throws IOException {
+			Long cnt = 0L;
+			
+			while (values.hasNext()) {
+				Record v = values.next();  
+				
+				cnt += (Long)v.get(0);
+			}
+			
+			if (cnt >= 3L) {
+				result.set(0,key.get(0));
+				result.set(1,cnt);
+			
+				context.write(result);
+			}
+			
+		}
+	}
 
   public static void main(String[] args)
       throws Exception {
@@ -88,3 +131,4 @@ public class GroupBy {
     JobClient.runJob(job);
   }
 }
+
