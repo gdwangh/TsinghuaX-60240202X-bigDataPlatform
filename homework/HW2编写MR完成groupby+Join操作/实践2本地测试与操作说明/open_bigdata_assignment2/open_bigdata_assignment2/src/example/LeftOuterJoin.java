@@ -79,29 +79,25 @@ public class LeftOuterJoin {
     	String customer_id = key.getString(0);
       String customer_name="null";
       String country;
+      long tag = 0;
       List<Long> orderIds = new ArrayList<Long>();
       
-      // System.out.println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-      
+      // System.out.println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"+customer_id);      
       while (values.hasNext()) {
         Record value = values.next();
-        long tag = key.getBigint(1);
+        tag = key.getBigint(1);
         
         if (tag == 0) {  // from customer
         	customer_name = value.getString(0);
         	country = value.getString(1);
         	
-        	// System.out.println("**************** "+tag+":"+ customer_id +","+customer_name+","+country+",");
+        	System.out.println("**************** "+tag+":"+ customer_id +","+customer_name+","+country+",");
 
         	if (!country.equals("UK")) {
-        		result.set(0, customer_name);
-        		result.set(1, null);
-        		context.write(result);
         		break;       
         	}
         } else {   // from order
         	  // System.out.println("**************** "+tag+":"+ customer_id +","+value.getBigint(2));
-
         		if (customer_name.equals("null")) break;
         		
         		result.set(0, customer_name);
@@ -111,8 +107,13 @@ public class LeftOuterJoin {
           	context.write(result);
         }
       }
-
-    }
+			
+			if (tag == 0) {   // country != "UK" or the customer_id without order
+				result.set(0, customer_name);
+				result.set(1, null);  
+				context.write(result);
+			}
+    }           		
 
     private void outputCustomer(String name, TaskContext context) throws IOException {
     }
