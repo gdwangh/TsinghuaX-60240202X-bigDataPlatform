@@ -1,0 +1,37 @@
+编译
+javac -cp .:odps/lib/* src/example/GroupBy.java -d .
+javac -cp .:odps/lib/* src/example/LeftOuterJoin.java -d .
+
+jar -cf xdj_example.jar example/
+
+进入环境
+./odps/bin/odps
+
+运行
+jar -classpath .:./* -local example.GroupBy orders gby_out
+jar -classpath .:./* -local example.LeftOuterJoin customers orders join_out
+
+查看表：
+
+ls warehouse/open_bigdata/__tables__/
+
+ls warehouse/open_bigdata/__tables__/orders
+ls -l warehouse/open_bigdata/__tables__/gby_out
+
+ls -l warehouse/open_bigdata/__tables__/join_out
+
+cat  warehouse/open_bigdata/__tables__/gby_out/__schema__
+
+cat  warehouse/open_bigdata/__tables__/gby_out/M_000001
+
+cat  warehouse/open_bigdata/__tables__/gby_out/R_000000
+
+cat warehouse/open_bigdata/__tables__/orders/data
+
+
+
+
+ls -l warehouse/open_bigdata/__tables__/join_out
+
+cat  warehouse/open_bigdata/__tables__/join_out/R_000000
+
