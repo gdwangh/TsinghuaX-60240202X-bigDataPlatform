@@ -24,8 +24,8 @@ public class MapperTaskContext implements Mapper.TaskContext {
 	static final String mapper_OutSubDir = "default.map.output.subdir";
 	static final String mapper_OutDir = "default.map.output.dir";
 
-	private final String StageId = "MAP";
-	private final int MAX_MAPPER_FILE_RECNUM = 10000;
+	static final String StageId = "MAP";
+	private final long MAX_MAPPER_FILE_RECNUM = 1000000;
 	
 	private String Separator;
 	
@@ -46,7 +46,7 @@ public class MapperTaskContext implements Mapper.TaskContext {
 		this.taskId = new TaskId(StageId, inst_id);
 
 		reader = new LocalRecordReader(this.getInputTableInfo().toString());
-
+		
 		Separator = FileSystems.getDefault().getSeparator();
 		
 		file_cnt = 0;

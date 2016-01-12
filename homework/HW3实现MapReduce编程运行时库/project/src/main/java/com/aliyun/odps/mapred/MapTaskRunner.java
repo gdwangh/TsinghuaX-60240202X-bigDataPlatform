@@ -158,6 +158,10 @@ public class MapTaskRunner implements Runnable {
 			// e.printStackTrace();
 			runningInfo.setStatus(taskId, LocalTaskStatus.KILLED);
 		}
+		
+		// test
+		// runningInfo.setStatus(taskId, LocalTaskStatus.FAILED);
+		// runningInfo.setStatus(taskId, LocalTaskStatus.KILLED);
 	}
 
 	public TASK_TYPE getTaskType() {

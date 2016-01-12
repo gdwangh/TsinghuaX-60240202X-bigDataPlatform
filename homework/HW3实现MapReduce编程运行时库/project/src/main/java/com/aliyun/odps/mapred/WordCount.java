@@ -128,6 +128,9 @@ public class WordCount {
     runner.setConf(job);
     RunningJob rj = runner.submit();
     rj.waitForCompletion();
+    
+    JobStatus s = rj.getJobStatus();    
+    System.out.println(s);
   }
 }
 

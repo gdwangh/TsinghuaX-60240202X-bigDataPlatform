@@ -96,30 +96,37 @@ public class LocalRunningJob implements RunningJob {
 
 	@Override
 	public synchronized JobStatus getJobStatus() {
-		// System.out.println("getJobStatus()"+mapThreadList.size()+","+reduceThreadList.size()+","+otherThreadList.size()+","+taskStatusList.size());
 		// TODO Auto-generated method stub
 		if (jobstatus == JobStatus.FAILED) 
 			return jobstatus;
 		
-		/* System.out.println("GetJobStatus("+taskStatusList.size()+")");
-		System.out.println("*******************************");
-		for (TaskId id: taskStatusList.keySet()) {
-			System.out.println("task state: "+ id+"  "+taskStatusList.get(id));
-		} */
+		boolean isAllSuc = true;
+		boolean isAllWait = true;
+		boolean isAllComplete = true;
+		boolean hasRunning = false;
+		boolean hasKilled = false;
 		
-		Collection<LocalTaskStatus> ts = taskStatusList.values();
-		// System.out.println(ts.toString()+", "+ts.retainAll(sucStatus));
+		for (LocalTaskStatus ts : taskStatusList.values()) {
+			if (ts.equals(LocalTaskStatus.RUNNING)) hasRunning = true;
+			if (ts.equals(LocalTaskStatus.KILLED)) hasKilled = true;
+			
+			if (!sucStatus.contains(ts)) isAllSuc = false;
+			if (!waitStatus.contains(ts)) isAllWait = false;
+			if (!endStatus.contains(ts)) isAllComplete = false;
+		}
 		
-		if (ts.contains(LocalTaskStatus.RUNNING)) {  // 没有fail, 有running的, 就是running
+		if (hasRunning) {  // 没有fail, 有running的, 就是running
 			jobstatus = JobStatus.RUNNING;
 		}  else 
-			if (ts.retainAll(sucStatus)==false) {
+			if (isAllSuc) {
 				jobstatus = JobStatus.SUCCEEDED;  // 所有的succeed, 就是succeed
+
 			}  else 
-				if (ts.contains(waitStatus)) {  // 全部都是wait,则说明还在prepare 
+				if (isAllWait) {  // 全部都是wait,则说明还在prepare 
 						jobstatus = JobStatus.PREP;
+
 				}  else
-					if ((ts.contains(LocalTaskStatus.KILLED) && ts.retainAll(endStatus))) {
+					if (isAllComplete && hasKilled) {
 						// kill和suc混合模式
 						jobstatus = JobStatus.KILLED;
 					}
@@ -145,8 +152,8 @@ public class LocalRunningJob implements RunningJob {
 	@Override
 	public void killJob() {
 		// TODO Auto-generated method stub
-		System.out.println("######### Kill Job!"+ taskStatusList.size());
-		printTaskList();
+		// System.out.println("######### Kill Job!"+ taskStatusList.size());
+		// printTaskList();
 		
 		for (Thread t: otherThreadList.values()) {
 			if (t.isAlive()) {
@@ -241,4 +248,33 @@ public class LocalRunningJob implements RunningJob {
 			
 		return waitList;
 	}
+	
+	public LocalTaskStatus getMapStatus() {
+		for (TaskId mapTaskId : mapThreadList.keySet()) {
+			LocalTaskStatus s = taskStatusList.get(mapTaskId);
+			if ( s == LocalTaskStatus.FAILED) {
+				return LocalTaskStatus.FAILED;
+			}  else 
+				if ( s == LocalTaskStatus.KILLED) {
+					return  LocalTaskStatus.KILLED;
+				}
+		}
+		
+		return  LocalTaskStatus.SUCCEEDED;
+	}
+	
+	public LocalTaskStatus getOtherTaskStatus() {
+		for (TaskId mapTaskId : otherThreadList.keySet()) {
+			LocalTaskStatus s = taskStatusList.get(mapTaskId);
+			if ( s == LocalTaskStatus.FAILED) {
+				return LocalTaskStatus.FAILED;
+			}  else 
+				if ( s == LocalTaskStatus.KILLED) {
+					return  LocalTaskStatus.KILLED;
+				}
+		}
+		
+		return  LocalTaskStatus.SUCCEEDED;
+	}
+
 }

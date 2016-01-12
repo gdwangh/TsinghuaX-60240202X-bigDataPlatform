@@ -19,4 +19,43 @@
 
     </dependencies>
 
+		<build>
+		   <plugins>
+		      <plugin> 
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-compiler-plugin</artifactId>
+		        <configuration>
+			        	<appendAssemblyId>false</appendAssemblyId>
+			        	<descriptorRefs> 
+	            			<descriptorRef>jar-with-dependencies</descriptorRef> 
+	        			</descriptorRefs>        
+			        	<source>1.7</source>
+			        	<target>1.7</target>
+			        	<encoding>gbk</encoding>
+		        </configuration>
+		      </plugin>
+		      
+			<plugin>
+	           <groupId>org.apache.maven.plugins</groupId>
+	           <artifactId>maven-shade-plugin</artifactId>
+	           <version>1.2.1</version>
+	           <executions>
+	               <execution>
+		               <phase>package</phase>
+		               <goals>
+		                     <goal>shade</goal>
+		               </goals>
+		               <configuration>
+		                     <transformers>
+		                       <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+		                        <mainClass>com.aliyun.odps.mapred.WordCount</mainClass>
+		                      </transformer>
+		                     </transformers>
+		               </configuration>
+	                </execution>
+	           </executions>
+        	</plugin>
+
+		   </plugins>
+		</build>
 </project>

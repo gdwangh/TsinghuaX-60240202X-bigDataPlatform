@@ -44,12 +44,22 @@ public class JobRunnerImpl extends Configured implements JobRunner {
 		    mt.start();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
+			TaskId taskId = null;
+			if (mapperContext == null) {
+				taskId = new TaskId(MapperTaskContext.StageId, inst_id);
+			}  else {
+				taskId = mapperContext.getTaskID();
+			}
+			
+			rj.setStatus(taskId, LocalTaskStatus.FAILED);
+			
 			e.printStackTrace();
+
+			return rj;
 		}
 		
 		 // mergeSort
 		inst_id++;
-		ArrayList<Thread> ReduceWaitList = new ArrayList<Thread>();
 		
 		TaskId mergeTaskId = new TaskId("MergeSort", inst_id);
 	    MergeTaskRunner msr= new MergeTaskRunner(mergeTaskId, mapperContext,rj);
@@ -59,13 +69,12 @@ public class JobRunnerImpl extends Configured implements JobRunner {
 	    // rj.printTaskList();
 
 		msrt.start();
-		ReduceWaitList.add(msrt);
 	    
 		 // reducer
 		 jobConf.set(MapperTaskContext.mapper_OutDir, mapperContext.getOutputDir());;
 		 inst_id++;
 		 try {
-			ReducerTaskContext reducerContext = new ReducerTaskContext(jobConf,inst_id);
+			ReducerTaskContext reducerContext = new ReducerTaskContext(jobConf,inst_id, false);
 			
 			ReduceTaskRunner rr = new ReduceTaskRunner(reducerContext,rj);
 		    Thread rt = new Thread(rr);		

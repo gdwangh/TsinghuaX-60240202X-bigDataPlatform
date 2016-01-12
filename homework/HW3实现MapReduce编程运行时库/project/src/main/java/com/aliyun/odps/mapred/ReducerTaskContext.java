@@ -34,15 +34,16 @@ public class ReducerTaskContext implements TaskContext {
 	private String inputDir;	
 	private ArrayList<String> inputFileList;
 	private int fileId;  // input
-		
+	
 	private List<Record> curValuesList;
 	
 	private LocalRecordWriter writer;
 	
+	private boolean splitOutFile;
 	private int file_cnt;
 	private String outputFileRoot;
 	
-	ReducerTaskContext(JobConf job, int inst_id) throws IOException {
+	ReducerTaskContext(JobConf job, int inst_id, boolean splitOutFlag) throws IOException {
 		this.jobConf = job;
 		this.reducerCounters = new Counters();
 		this.taskId = new TaskId(StageId, inst_id);
@@ -50,10 +51,17 @@ public class ReducerTaskContext implements TaskContext {
 		inputFileList = null;
 		
 		// output 
+		this.splitOutFile = splitOutFlag;
 		file_cnt = 0;
 		outputFileRoot = this.getOutputTableInfo()[0].toString();
 		
-		String outputFileName = outputFileRoot;
+		String outputFileName=null;
+		if (splitOutFile) {
+			outputFileName = outputFileRoot + "."+file_cnt;
+		}  else {
+			outputFileName = outputFileRoot;
+		}
+
 		// System.out.println(outputFileName);
 		writer = new LocalRecordWriter(outputFileName);
 		
@@ -191,11 +199,11 @@ public class ReducerTaskContext implements TaskContext {
 	@Override
 	public void write(Record record) throws IOException {
 		// TODO Auto-generated method stub
-		if (writer.getWrittenRecCount() == MAX_REDUCER_FILE_RECNUM) {
+		if ((splitOutFile) && (writer.getWrittenRecCount() == MAX_REDUCER_FILE_RECNUM)) {
 			closeOutput();
 
 			file_cnt++;
-			String outputFileName = outputFileRoot + "_"+file_cnt+".cvs";
+			String outputFileName = outputFileRoot + "."+file_cnt;
 			//System.out.println("******* "+outputFileName);
 			writer = new LocalRecordWriter(outputFileName);
 		}

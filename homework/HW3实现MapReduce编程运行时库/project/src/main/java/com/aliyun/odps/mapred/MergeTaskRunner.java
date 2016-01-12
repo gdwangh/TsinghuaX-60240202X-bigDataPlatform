@@ -34,7 +34,6 @@ public class MergeTaskRunner implements Runnable {
 		System.out.println("merge sort waiting for map.");
 
 		 try {
-			 	Thread.sleep(2000);
 				runningInfo.setStatus(taskId, LocalTaskStatus.WAITNG);
 				for (Thread mt : waitList) {
 					mt.join();
@@ -44,15 +43,19 @@ public class MergeTaskRunner implements Runnable {
 				// TODO Auto-generated catch block
 				// e.printStackTrace();
 				runningInfo.setStatus(taskId, LocalTaskStatus.KILLED);
+
 				return;
 		  }
 		
 		System.out.println("Running merge sort.");
 		try {
-			if ((runningInfo.getJobStatus() == JobStatus.FAILED) ||
-				(runningInfo.getJobStatus() == JobStatus.KILLED))
+			if (runningInfo.getMapStatus() != LocalTaskStatus.SUCCEEDED)
 			{
 				runningInfo.setStatus(taskId, LocalTaskStatus.KILLED);
+				
+				System.out.println("merge sort is killed.");
+				// runningInfo.printTaskList();
+				
 				return;
 			}
 			
@@ -70,6 +73,10 @@ public class MergeTaskRunner implements Runnable {
 			runningInfo.setStatus(taskId, LocalTaskStatus.KILLED);
 
 		}
+		
+		// test
+		// runningInfo.setStatus(taskId, LocalTaskStatus.FAILED);
+		// runningInfo.setStatus(taskId, LocalTaskStatus.KILLED);
 	}
 	
 	private void mergeSortExecute() throws IOException, InterruptedException {

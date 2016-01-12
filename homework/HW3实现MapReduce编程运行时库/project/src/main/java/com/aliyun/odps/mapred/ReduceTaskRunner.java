@@ -33,15 +33,19 @@ public class ReduceTaskRunner implements Runnable {
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			runningInfo.setStatus(taskId, LocalTaskStatus.KILLED);
+			System.out.println("merge sort is canceled.");
+
 			return;
 		}
 		
 		System.out.println("Running reduce.");
 		try {
-			if (runningInfo.getJobStatus() == JobStatus.FAILED)
+			if (((runningInfo.getMapStatus() != LocalTaskStatus.SUCCEEDED)) || ((runningInfo.getOtherTaskStatus() != LocalTaskStatus.SUCCEEDED)) )
 			{
-					runningInfo.setStatus(taskId, LocalTaskStatus.FAILED);
-					return;
+				runningInfo.setStatus(taskId, LocalTaskStatus.KILLED);
+				System.out.println("reduce is killed.");
+
+				return;
 			}
 			
 			runningInfo.setStatus(taskId, LocalTaskStatus.RUNNING);
@@ -76,6 +80,10 @@ public class ReduceTaskRunner implements Runnable {
 			runningInfo.setStatus(taskId, LocalTaskStatus.FAILED);
 
 		}
+		
+		// test
+		// runningInfo.setStatus(taskId, LocalTaskStatus.FAILED);
+		// runningInfo.setStatus(taskId, LocalTaskStatus.KILLED);
 	}
 	
 	private void reducerTaskExecute() throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException, InterruptedException {

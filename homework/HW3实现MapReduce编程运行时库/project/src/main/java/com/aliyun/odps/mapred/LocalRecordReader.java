@@ -17,6 +17,7 @@ public class LocalRecordReader implements RecordReader {
 	private Column[] schema;
 	
 	public LocalRecordReader(String fileName) throws IOException {
+		
 		reader = new CsvReader(fileName);
 
 		reader.readHeaders();
